@@ -1,3 +1,5 @@
-numpy
-transformations
+numpy~=1.24.2
+transformations~=2022.9.26
 pybase64
+setuptools==67.6.0
+roslibpy~=1.4.2

@@ -1,46 +1,4 @@
-# Software License Agreement (BSD License)
-#
-# Copyright (c) 2008, Willow Garage, Inc.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above
-#    copyright notice, this list of conditions and the following
-#    disclaimer in the documentation and/or other materials provided
-#    with the distribution.
-#  * Neither the name of Willow Garage, Inc. nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
-# Author: Jon Binney
-'''
-Functions for working with PointCloud2.
-'''
-
-__docformat__ = "restructuredtext en"
-
 import sys
-
-from .registry import converts_from_numpy, converts_to_numpy
-
 import array
 import numpy as np
 from sensor_msgs.msg import PointCloud2, PointField
@@ -64,8 +22,8 @@ nptype_to_pftype = dict((nptype, pftype) for pftype, nptype in type_mappings)
 
 
 def fields_to_dtype(fields, point_step):
-    '''Convert a list of PointFields to a numpy record datatype.
-    '''
+    """Convert a list of PointFields to a numpy record datatype.
+    """
     offset = 0
     np_dtype_list = []
     for f in fields:
@@ -110,6 +68,7 @@ def dtype_to_fields(dtype):
         fields.append(pf)
     return fields
 
+
 def pointcloud2_to_array(cloud_msg, squeeze=True):
     ''' Converts a roslib PointCloud2 message to a numpy recordarray
 
@@ -128,12 +87,13 @@ def pointcloud2_to_array(cloud_msg, squeeze=True):
     # remove the dummy fields that were added
     cloud_arr = cloud_arr[
         [fname for fname, _type in dtype_list if not (
-            fname[:len(DUMMY_FIELD_PREFIX)] == DUMMY_FIELD_PREFIX)]]
+                fname[:len(DUMMY_FIELD_PREFIX)] == DUMMY_FIELD_PREFIX)]]
 
     if squeeze and cloud_msg.height == 1:
         return np.reshape(cloud_arr, (cloud_msg.width,))
     else:
         return np.reshape(cloud_arr, (cloud_msg.height, cloud_msg.width))
+
 
 def array_to_pointcloud2(cloud_arr, stamp=None, frame_id=None):
     '''Converts a numpy record array to a sensor_msgs.msg.PointCloud2.
@@ -152,9 +112,9 @@ def array_to_pointcloud2(cloud_arr, stamp=None, frame_id=None):
     cloud_msg.fields = dtype_to_fields(cloud_arr.dtype)
     cloud_msg.is_bigendian = sys.byteorder != 'little'
     cloud_msg.point_step = cloud_arr.dtype.itemsize
-    cloud_msg.row_step = cloud_msg.point_step*cloud_arr.shape[1]
+    cloud_msg.row_step = cloud_msg.point_step * cloud_arr.shape[1]
     cloud_msg.is_dense = \
-      all([np.isfinite(
+        all([np.isfinite(
             cloud_arr[fname]).all() for fname in cloud_arr.dtype.names])
 
     # The PointCloud2.data setter will create an array.array object for you if you don't
@@ -172,6 +132,7 @@ def array_to_pointcloud2(cloud_arr, stamp=None, frame_id=None):
     as_array.frombytes(array_bytes)
     cloud_msg.data = as_array
     return cloud_msg
+
 
 def merge_rgb_fields(cloud_arr):
     '''Takes an array with named np.uint8 fields 'r', 'g', and 'b', and returns
@@ -209,6 +170,7 @@ def merge_rgb_fields(cloud_arr):
 
     return new_cloud_arr
 
+
 def split_rgb_field(cloud_arr):
     '''Takes an array with a named 'rgb' float32 field, and returns an array in
     which this has been split into 3 uint 8 fields: 'r', 'g', and 'b'.
@@ -244,6 +206,7 @@ def split_rgb_field(cloud_arr):
             new_cloud_arr[field_name] = cloud_arr[field_name]
     return new_cloud_arr
 
+
 def get_xyz_points(cloud_array, remove_nans=True, dtype=float):
     '''Pulls out x, y, and z columns from the cloud recordarray, and returns
     a 3xN matrix.
@@ -257,11 +220,12 @@ def get_xyz_points(cloud_array, remove_nans=True, dtype=float):
 
     # pull out x, y, and z values
     points = np.zeros(cloud_array.shape + (3,), dtype=dtype)
-    points[...,0] = cloud_array['x']
-    points[...,1] = cloud_array['y']
-    points[...,2] = cloud_array['z']
+    points[..., 0] = cloud_array['x']
+    points[..., 1] = cloud_array['y']
+    points[..., 2] = cloud_array['z']
 
     return points
+
 
 def pointcloud2_to_xyz_array(cloud_msg, remove_nans=True):
     return get_xyz_points(

@@ -6,3 +6,8 @@ venv
 ros2_numpy.egg-info
 .idea
 *~
+/roslibpy2numpy.egg-info/dependency_links.txt
+/roslibpy2numpy.egg-info/PKG-INFO
+/roslibpy2numpy.egg-info/requires.txt
+/roslibpy2numpy.egg-info/SOURCES.txt
+/roslibpy2numpy.egg-info/top_level.txt

@@ -5,6 +5,7 @@ import transformations.transformations as transformations
 
 from geometry_msgs.msg import Vector3, Quaternion, Transform, Point, Pose
 
+
 class TestGeometry(unittest.TestCase):
     def test_point(self):
         p = Point(x=1., y=2., z=3.)
@@ -64,7 +65,7 @@ class TestGeometry(unittest.TestCase):
             orientation=Quaternion(
                 **dict(
                     zip(['x', 'y', 'z', 'w'],
-                    transformations.quaternion_from_euler(np.pi, 0, 0))))
+                        transformations.quaternion_from_euler(np.pi, 0, 0))))
         )
 
         t_mat = rnp.numpify(t)
@@ -81,6 +82,7 @@ class TestGeometry(unittest.TestCase):
         np.testing.assert_allclose(msg.orientation.y, t.orientation.y)
         np.testing.assert_allclose(msg.orientation.z, t.orientation.z)
         np.testing.assert_allclose(msg.orientation.w, t.orientation.w)
+
 
 if __name__ == '__main__':
     unittest.main()
