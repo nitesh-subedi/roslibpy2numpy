@@ -1,13 +1,15 @@
 import sys
 import array
 import numpy as np
-from sensor_msgs.msg import PointCloud2, PointField
+import roslibpy
+import time
 
 # prefix to the names of dummy fields we add to get byte alignment
 # correct. this needs to not clash with any actual field names
 DUMMY_FIELD_PREFIX = '__'
 
 # mappings between PointField types and numpy types
+# noinspection PyArgumentList
 type_mappings = [(1, np.dtype('int8')),
                  (2, np.dtype('uint8')),
                  (3, np.dtype('int16')),
@@ -21,6 +23,36 @@ pftype_to_nptype = dict(type_mappings)
 nptype_to_pftype = dict((nptype, pftype) for pftype, nptype in type_mappings)
 
 
+class PointField:
+    def __init__(self):
+        self.name = None
+        self.offset = None
+        self.datatype = None
+        self.count = None
+
+    def __repr__(self):
+        return 'PointField(%s, %s, %s, %s)' % (self.name, self.offset, self.datatype, self.count)
+
+
+# class PointCloud2:
+#     def __init__(self):
+#         self.header = None
+#         self.height = None
+#         self.width = None
+#         self.fields = None
+#         self.is_bigendian = None
+#         self.point_step = None
+#         self.row_step = None
+#         self.data = None
+#         self.is_dense = None
+#
+#     def __repr__(self):
+#         return 'PointCloud2(%s, %s, %s, %s, %s, %s, %s, %s, %s)' % (
+#         self.header, self.height, self.width, self.fields, self.is_bigendian, self.point_step, self.row_step, self.data,
+#         self.is_dense)
+
+
+# noinspection PyArgumentList
 def fields_to_dtype(fields, point_step):
     """Convert a list of PointFields to a numpy record datatype.
     """
@@ -49,11 +81,13 @@ def fields_to_dtype(fields, point_step):
 
 
 def dtype_to_fields(dtype):
-    '''Convert a numpy record datatype into a list of PointFields.
-    '''
+    """Convert a numpy record datatype into a list of PointFields.
+    """
     fields = []
     for field_name in dtype.names:
         np_field_type, field_offset = dtype.fields[field_name]
+        # Create a PointField for this field
+
         pf = PointField()
         pf.name = field_name
         if np_field_type.subdtype:
@@ -70,14 +104,14 @@ def dtype_to_fields(dtype):
 
 
 def pointcloud2_to_array(cloud_msg, squeeze=True):
-    ''' Converts a roslib PointCloud2 message to a numpy recordarray
+    """ Converts a roslib PointCloud2 message to a numpy recordarray
 
     Reshapes the returned array to have shape (height, width), even if the
     height is 1.
 
     The reason for using np.frombuffer rather than struct.unpack is
     speed... especially for large point clouds, this will be <much> faster.
-    '''
+    """
     # construct a numpy record type equivalent to the point type of this cloud
     dtype_list = fields_to_dtype(cloud_msg.fields, cloud_msg.point_step)
 
@@ -95,25 +129,18 @@ def pointcloud2_to_array(cloud_msg, squeeze=True):
         return np.reshape(cloud_arr, (cloud_msg.height, cloud_msg.width))
 
 
-def array_to_pointcloud2(cloud_arr, stamp=None, frame_id=None):
-    '''Converts a numpy record array to a sensor_msgs.msg.PointCloud2.
-    '''
+def array_to_pointcloud2(cloud_arr, frame_id='base_link'):
+    """Converts a numpy record array to a sensor_msgs.msg.PointCloud2.
+    """
     # make it 2d (even if height will be 1)
     cloud_arr = np.atleast_2d(cloud_arr)
-
-    cloud_msg = PointCloud2()
-
-    if stamp is not None:
-        cloud_msg.header.stamp = stamp
-    if frame_id is not None:
-        cloud_msg.header.frame_id = frame_id
-    cloud_msg.height = cloud_arr.shape[0]
-    cloud_msg.width = cloud_arr.shape[1]
-    cloud_msg.fields = dtype_to_fields(cloud_arr.dtype)
-    cloud_msg.is_bigendian = sys.byteorder != 'little'
-    cloud_msg.point_step = cloud_arr.dtype.itemsize
-    cloud_msg.row_step = cloud_msg.point_step * cloud_arr.shape[1]
-    cloud_msg.is_dense = \
+    height = cloud_arr.shape[0]
+    width = cloud_arr.shape[1]
+    fields = dtype_to_fields(cloud_arr.dtype)
+    is_bigendian = sys.byteorder != 'little'
+    point_step = cloud_arr.dtype.itemsize
+    row_step = point_step * cloud_arr.shape[1]
+    is_dense = \
         all([np.isfinite(
             cloud_arr[fname]).all() for fname in cloud_arr.dtype.names])
 
@@ -130,18 +157,33 @@ def array_to_pointcloud2(cloud_arr, stamp=None, frame_id=None):
         array_bytes = b""
     as_array = array.array("B")
     as_array.frombytes(array_bytes)
-    cloud_msg.data = as_array
+    data = as_array
+    cloud_msg = roslibpy.Message({
+        'header': {
+            'stamp': time.time(),
+            'frame_id': frame_id
+        },
+        'height': height,
+        'width': width,
+        'fields': fields,
+        'is_bigendian': is_bigendian,
+        'point_step': point_step,
+        'row_step': row_step,
+        'data': data,
+        'is_dense': is_dense
+    })
+
     return cloud_msg
 
 
 def merge_rgb_fields(cloud_arr):
-    '''Takes an array with named np.uint8 fields 'r', 'g', and 'b', and returns
+    """Takes an array with named np.uint8 fields 'r', 'g', and 'b', and returns
        an array in which they have been merged into a single np.float32 'rgb'
        field. The first byte of this field is the 'r' uint8, the second is the
        'g', uint8, and the third is the 'b' uint8.
 
        This is the way that pcl likes to handle RGB colors for some reason.
-    '''
+    """
     r = np.asarray(cloud_arr['r'], dtype=np.uint32)
     g = np.asarray(cloud_arr['g'], dtype=np.uint32)
     b = np.asarray(cloud_arr['b'], dtype=np.uint32)
@@ -172,11 +214,11 @@ def merge_rgb_fields(cloud_arr):
 
 
 def split_rgb_field(cloud_arr):
-    '''Takes an array with a named 'rgb' float32 field, and returns an array in
+    """Takes an array with a named 'rgb' float32 field, and returns an array in
     which this has been split into 3 uint 8 fields: 'r', 'g', and 'b'.
 
     (pcl stores rgb in packed 32 bit floats)
-    '''
+    """
     rgb_arr = cloud_arr['rgb'].copy()
     rgb_arr.dtype = np.uint32
     r = np.asarray((rgb_arr >> 16) & 255, dtype=np.uint8)
@@ -208,9 +250,9 @@ def split_rgb_field(cloud_arr):
 
 
 def get_xyz_points(cloud_array, remove_nans=True, dtype=float):
-    '''Pulls out x, y, and z columns from the cloud recordarray, and returns
+    """Pulls out x, y, and z columns from the cloud recordarray, and returns
     a 3xN matrix.
-    '''
+    """
     # remove crap points
     if remove_nans:
         mask = np.isfinite(cloud_array['x']) & \

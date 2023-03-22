@@ -1,7 +1,8 @@
+import base64
 import sys
 import numpy as np
-import base64
 import roslibpy
+import PIL.Image as Image
 
 name_to_dtypes = {
     "rgb8": (np.uint8, 3),
@@ -57,6 +58,7 @@ name_to_dtypes = {
 }
 
 
+# noinspection PyArgumentList
 def raw_image_to_numpy(msg):
     if not msg['encoding'] in name_to_dtypes:
         raise TypeError('Unrecognized encoding {}'.format(msg.encoding))
@@ -130,3 +132,12 @@ def compressed_image_to_numpy(img):
     image_bytes = base64.b64decode(base64_bytes)
     # Convert the image to a numpy array
     np_arr = np.frombuffer(image_bytes, dtype=np.uint8)
+    # Decode the numpy array as an image
+    img_np = Image.fromarray(np_arr)
+    return img_np
+
+
+def numpy_to_compressed_image(arr, frame_id='camera_frame', encoding='jpeg'):
+    img = Image.fromarray(arr)
+    encoded = base64.b64encode(img).decode('ascii')
+    return dict(header=dict(frame_id=frame_id), format=encoding, data=encoded)

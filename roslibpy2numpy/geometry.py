@@ -1,14 +1,56 @@
-from .registry import converts_from_numpy, converts_to_numpy
-from geometry_msgs.msg import Transform, Vector3, Quaternion, Point, Pose
 import transformations as transformations
-from . import numpify
-
 import numpy as np
 
 
-# basic types
+class Transform:
+    def __init__(self, translation, rotation):
+        self.translation = translation
+        self.rotation = rotation
 
-@converts_to_numpy(Vector3)
+    def __repr__(self):
+        return "Transform(translation={}, rotation={})".format(self.translation, self.rotation)
+
+
+class Vector3:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __repr__(self):
+        return "Vector3(x={}, y={}, z={})".format(self.x, self.y, self.z)
+
+
+class Quaternion:
+    def __init__(self, x, y, z, w):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.w = w
+
+    def __repr__(self):
+        return "Quaternion(x={}, y={}, z={}, w={})".format(self.x, self.y, self.z, self.w)
+
+
+class Point:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __repr__(self):
+        return "Point(x={}, y={}, z={})".format(self.x, self.y, self.z)
+
+
+class Pose:
+    def __init__(self, position, orientation):
+        self.position = position
+        self.orientation = orientation
+
+    def __repr__(self):
+        return "Pose(position={}, orientation={})".format(self.position, self.orientation)
+
+
 def vector3_to_numpy(msg, hom=False):
     if hom:
         return np.array([msg.x, msg.y, msg.z, 0])
@@ -16,7 +58,6 @@ def vector3_to_numpy(msg, hom=False):
         return np.array([msg.x, msg.y, msg.z])
 
 
-@converts_from_numpy(Vector3)
 def numpy_to_vector3(arr):
     if arr.shape[-1] == 4:
         assert np.all(arr[..., -1] == 0)
@@ -30,7 +71,6 @@ def numpy_to_vector3(arr):
             arr=arr)
 
 
-@converts_to_numpy(Point)
 def point_to_numpy(msg, hom=False):
     if hom:
         return np.array([msg.x, msg.y, msg.z, 1])
@@ -38,7 +78,6 @@ def point_to_numpy(msg, hom=False):
         return np.array([msg.x, msg.y, msg.z])
 
 
-@converts_from_numpy(Point)
 def numpy_to_point(arr):
     if arr.shape[-1] == 4:
         arr = arr[..., :-1] / arr[..., -1]
@@ -50,12 +89,10 @@ def numpy_to_point(arr):
             lambda v: Point(**dict(zip(['x', 'y', 'z'], v))), axis=-1, arr=arr)
 
 
-@converts_to_numpy(Quaternion)
 def quat_to_numpy(msg):
     return np.array([msg.x, msg.y, msg.z, msg.w])
 
 
-@converts_from_numpy(Quaternion)
 def numpy_to_quat(arr):
     assert arr.shape[-1] == 4
 
@@ -67,18 +104,14 @@ def numpy_to_quat(arr):
             axis=-1, arr=arr)
 
 
-# compound types
-# all of these take ...x4x4 homogeneous matrices
-
-@converts_to_numpy(Transform)
 def transform_to_numpy(msg):
-    return np.dot(
-        transformations.translation_matrix(numpify(msg.translation)),
-        transformations.quaternion_matrix(numpify(msg.rotation))
-    )
+    trans = np.array(transformations.translation_matrix(
+        [msg.translation.x, msg.translation.y, msg.translation.z]))
+    rot = np.array(transformations.quaternion_matrix(
+        [msg.rotation.x, msg.rotation.y, msg.rotation.z, msg.rotation.w]))
+    return np.dot(trans, rot)
 
 
-@converts_from_numpy(Transform)
 def numpy_to_transform(arr):
     shape, rest = arr.shape[:-2], arr.shape[-2:]
     assert rest == (4, 4)
@@ -106,15 +139,13 @@ def numpy_to_transform(arr):
             )
 
 
-@converts_to_numpy(Pose)
 def pose_to_numpy(msg):
     return np.dot(
-        transformations.translation_matrix(numpify(msg.position)),
-        transformations.quaternion_matrix(numpify(msg.orientation))
+        transformations.translation_matrix([msg.position.x, msg.position.y, msg.position.z]),
+        transformations.quaternion_matrix([msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w])
     )
 
 
-@converts_from_numpy(Pose)
 def numpy_to_pose(arr):
     shape, rest = arr.shape[:-2], arr.shape[-2:]
     assert rest == (4, 4)

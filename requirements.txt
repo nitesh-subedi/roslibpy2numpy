@@ -3,3 +3,4 @@ transformations~=2022.9.26
 pybase64
 setuptools==67.6.0
 roslibpy~=1.4.2
+Pillow==9.4.0

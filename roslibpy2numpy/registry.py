@@ -4,22 +4,6 @@ _to_numpy = {}
 _from_numpy = {}
 
 
-def converts_to_numpy(msgtype, plural=False):
-    def decorator(f):
-        _to_numpy[msgtype, plural] = f
-        return f
-
-    return decorator
-
-
-def converts_from_numpy(msgtype, plural=False):
-    def decorator(f):
-        _from_numpy[msgtype, plural] = f
-        return f
-
-    return decorator
-
-
 def numpify(msg, *args, **kwargs):
     if msg is None:
         return
