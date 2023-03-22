@@ -1,0 +1,8 @@
+*.pyc
+__pycache__
+check.py
+check_2.py
+venv
+ros2_numpy.egg-info
+.idea
+*~
