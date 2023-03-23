@@ -4,7 +4,7 @@ on: push
 jobs:
   build-n-publish:
     name: Build and publish to TestPyPI
-    runs-on: ubuntu-latest, windows-latest, macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@humble
       - name: Set up Python 3.10
