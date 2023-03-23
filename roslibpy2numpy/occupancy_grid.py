@@ -5,10 +5,7 @@ import roslibpy
 
 
 def occupancygrid_to_numpy(msg):
-    data = \
-        np.asarray(msg.data,
-                   dtype=np.int8).reshape(msg.info.height, msg.info.width)
-
+    data = np.asarray(msg['data'], dtype=np.int8).reshape(msg['info']['height'], msg['info']['width'])
     return np.ma.array(data, mask=data == -1, fill_value=-1)
 
 

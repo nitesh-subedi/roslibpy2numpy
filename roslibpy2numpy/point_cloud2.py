@@ -34,24 +34,6 @@ class PointField:
         return 'PointField(%s, %s, %s, %s)' % (self.name, self.offset, self.datatype, self.count)
 
 
-# class PointCloud2:
-#     def __init__(self):
-#         self.header = None
-#         self.height = None
-#         self.width = None
-#         self.fields = None
-#         self.is_bigendian = None
-#         self.point_step = None
-#         self.row_step = None
-#         self.data = None
-#         self.is_dense = None
-#
-#     def __repr__(self):
-#         return 'PointCloud2(%s, %s, %s, %s, %s, %s, %s, %s, %s)' % (
-#         self.header, self.height, self.width, self.fields, self.is_bigendian, self.point_step, self.row_step, self.data,
-#         self.is_dense)
-
-
 # noinspection PyArgumentList
 def fields_to_dtype(fields, point_step):
     """Convert a list of PointFields to a numpy record datatype.

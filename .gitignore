@@ -11,3 +11,4 @@ ros2_numpy.egg-info
 /roslibpy2numpy.egg-info/requires.txt
 /roslibpy2numpy.egg-info/SOURCES.txt
 /roslibpy2numpy.egg-info/top_level.txt
+/tests/trash.py
