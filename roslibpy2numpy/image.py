@@ -2,7 +2,7 @@ import base64
 import sys
 import numpy as np
 import roslibpy
-import PIL.Image as Image
+import cv2
 
 name_to_dtypes = {
     "rgb8": (np.uint8, 3),
@@ -72,8 +72,8 @@ def raw_image_to_numpy(msg):
     image_bytes = base64.b64decode(base64_bytes)
     # # Convert to a NumPy array
     data = np.frombuffer(image_bytes, dtype=dtype).reshape(shape)
-    if msg['encoding'] == 'bgr8':
-        data = data[:, :, ::-1]
+    if msg['encoding'] == 'rgb8':
+        data = cv2.cvtColor(data, cv2.COLOR_RGB2BGR)
 
     if channels == 1:
         data = data[..., 0]
@@ -107,10 +107,6 @@ def numpy_to_image_raw(arr, encoding="bgr8", frame_id='camera_frame'):
     contig = np.ascontiguousarray(arr)
     data = contig.tostring()
     step = contig.strides[0]
-    is_bigendian = (
-            arr.dtype.byteorder == '>' or
-            arr.dtype.byteorder == '=' and sys.byteorder == 'big'
-    )
 
     im = roslibpy.Message({
         'header': {
@@ -119,7 +115,7 @@ def numpy_to_image_raw(arr, encoding="bgr8", frame_id='camera_frame'):
         'height': height,
         'width': width,
         'encoding': encoding,
-        'is_bigendian': is_bigendian,
+        # 'is_bigendian': is_bigendian,
         'step': step,
         'data': base64.b64encode(data).decode('ascii')
     })
@@ -133,11 +129,12 @@ def compressed_image_to_numpy(img):
     # Convert the image to a numpy array
     np_arr = np.frombuffer(image_bytes, dtype=np.uint8)
     # Decode the numpy array as an image
-    img_np = Image.fromarray(np_arr)
+    img_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
     return img_np
 
 
 def numpy_to_compressed_image(arr, frame_id='camera_frame', encoding='jpeg'):
-    img = Image.fromarray(arr)
-    encoded = base64.b64encode(img).decode('ascii')
+    if encoding not in ['jpeg', 'png']:
+        raise TypeError('Unrecognized encoding {}'.format(encoding))
+    encoded = base64.b64encode(arr).decode('ascii')
     return dict(header=dict(frame_id=frame_id), format=encoding, data=encoded)
