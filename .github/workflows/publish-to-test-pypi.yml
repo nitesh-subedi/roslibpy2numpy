@@ -6,7 +6,7 @@ jobs:
     name: Build and publish to TestPyPI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@humble
+      - uses: actions/checkout@master
       - name: Set up Python 3.10
         uses: actions/setup-python@v3
         with:
