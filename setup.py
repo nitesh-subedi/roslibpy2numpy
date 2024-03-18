@@ -14,7 +14,7 @@ def read_requirements(filename: str):
 
 setup(
     name="roslibpy2numpy",
-    version="0.0.2",
+    version="0.0.3",
     description="Convert ROS2 messages from roslibpy to and from numpy arrays",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

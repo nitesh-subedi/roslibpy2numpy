@@ -1,7 +1,7 @@
-numpy~=1.24.2
-transformations~=2022.9.26
-pybase64~=1.2.3
-setuptools==67.6.0
-roslibpy~=1.4.2
-Pillow==9.4.0
-opencv-python~=4.7.0.72
+numpy
+transformations
+pybase64
+setuptools
+roslibpy
+Pillow
+opencv-python
